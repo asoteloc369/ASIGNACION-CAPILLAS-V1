@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Asignación de Capillas</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Flatpickr CSS & JS -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gray-100 text-gray-800">
+  <!--
+    Archivo: index.html
+    Descripción: SPA para asignación y ocupación de capillas.
+    Bitácora de datos: opciones de capilla y horarios según plantilla anexada. citeturn1file0
+  -->
+  <header class="bg-white shadow p-4 flex items-center">
+    <img src="logo.png" alt="Logo" class="h-8 mr-4" />
+    <h1 class="text-2xl font-semibold">Asignación de Capillas</h1>
+  </header>
+  <main class="p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- Formulario de asignación -->
+    <section class="bg-white p-4 rounded shadow">
+      <h2 class="text-xl font-semibold mb-4">Nueva Asignación</h2>
+      <form id="assignmentForm" class="space-y-4">
+        <div>
+          <label for="chapelSelect" class="block font-medium mb-1">Capilla</label>
+          <select id="chapelSelect" class="w-full border rounded p-2">
+            <option value="">-- Seleccione Capilla --</option>
+            <option value="Capilla Del CONSUELO">Capilla Del CONSUELO</option>
+            <option value="Capilla MEMORIAL">Capilla MEMORIAL</option>
+            <option value="Capilla SAN JOSE">Capilla SAN JOSE</option>
+            <option value="Capilla RESURRECCION">Capilla RESURRECCION</option>
+            <option value="Capilla SANTO CRISTO">Capilla SANTO CRISTO</option>
+            <option value="En DOMICILIO">En DOMICILIO</option>
+            <option value="N/A">N/A</option>
+            <option value="S.L.R.C.">S.L.R.C.</option>
+          </select>
+        </div>
+        <div>
+          <label for="dateInput" class="block font-medium mb-1">Fecha de Velación</label>
+          <div class="relative">
+            <input type="text" id="dateInput" readonly class="w-full border rounded p-2 pr-10 cursor-pointer bg-white" placeholder="Selecciona fecha" />
+            <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+              <!-- Heroicon: calendar -->
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zM4 8h12v8H4V8z" />
+              </svg>
+            </div>
+          </div>
+        </div>
+        <div>
+          <label for="timeSelect" class="block font-medium mb-1">Horario Velación</label>
+          <select id="timeSelect" class="w-full border rounded p-2">
+            <option value="">-- Seleccione Horario --</option>
+            <option value="5:00 PM a 11:00 PM">5:00 PM a 11:00 PM</option>
+            <option value="6:00 PM a 12:00 AM">6:00 PM a 12:00 AM</option>
+            <option value="6:30 PM a 12:30 AM">6:30 PM a 12:30 AM</option>
+            <option value="7:00 PM a 1:00 AM">7:00 PM a 1:00 AM</option>
+            <option value="7:30 PM a 1:30 AM">7:30 PM a 1:30 AM</option>
+            <option value="8:00 PM a 2:00 AM">8:00 PM a 2:00 AM</option>
+            <option value="8:30 PM a 2:30 AM">8:30 PM a 2:30 AM</option>
+            <option value="9:00 PM a 3:00 AM">9:00 PM a 3:00 AM</option>
+          </select>
+        </div>
+        <div class="flex space-x-2">
+          <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Guardar</button>
+          <button type="button" id="viewSummaryBtn" class="bg-gray-600 text-white px-4 py-2 rounded">Ver resumen diario</button>
+        </div>
+        <div id="message" role="alert" class="mt-2 text-sm"></div>
+      </form>
+    </section>
+
+    <!-- Listado de asignaciones y resumen -->
+    <section class="space-y-4">
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Asignaciones Existentes</h2>
+        <div class="overflow-x-auto">
+          <table id="assignmentsTable" class="min-w-full table-auto">
+            <thead>
+              <tr class="bg-gray-200">
+                <th class="p-2">Capilla</th>
+                <th class="p-2">Fecha</th>
+                <th class="p-2">Horario</th>
+                <th class="p-2">Acciones</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="bg-white p-4 rounded shadow">
+        <h2 class="text-xl font-semibold mb-4">Resumen Ocupación</h2>
+        <div id="summaryTable" class="overflow-x-auto"></div>
+        <canvas id="summaryChart" class="mt-4"></canvas>
+      </div>
+    </section>
+  </main>
+
+  <footer class="bg-white text-center p-4 text-sm">
+    &copy; 2025 Latinoamericana Recinto Funeral.
+  </footer>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const chapelSelect = document.getElementById('chapelSelect');
+      const dateInput = document.getElementById('dateInput');
+      const timeSelect = document.getElementById('timeSelect');
+      const form = document.getElementById('assignmentForm');
+      const assignmentsTable = document.querySelector('#assignmentsTable tbody');
+      const messageDiv = document.getElementById('message');
+      const summaryTableDiv = document.getElementById('summaryTable');
+      const summaryChartCtx = document.getElementById('summaryChart').getContext('2d');
+      const viewSummaryBtn = document.getElementById('viewSummaryBtn');
+
+      // Inicializar datepicker
+      flatpickr(dateInput, { dateFormat: 'Y-m-d', defaultDate: new Date(), allowInput: false });
+
+      let assignments = JSON.parse(localStorage.getItem('assignments') || '[]');
+      let summaryChart;
+
+      function showMessage(text, type = 'text-green-600') {
+        messageDiv.textContent = text;
+        messageDiv.className = type;
+        setTimeout(() => messageDiv.textContent = '', 3000);
+      }
+
+      function saveAssignments() {
+        localStorage.setItem('assignments', JSON.stringify(assignments));
+      }
+
+      function renderAssignments() {
+        assignmentsTable.innerHTML = '';
+        assignments.forEach((a, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td class="border p-2">${a.chapel}</td>
+            <td class="border p-2">${a.date}</td>
+            <td class="border p-2">${a.time}</td>
+            <td class="border p-2 space-x-2">
+              <button data-idx="${idx}" class="edit-btn text-blue-600">Editar</button>
+              <button data-idx="${idx}" class="delete-btn text-red-600">Eliminar</button>
+            </td>`;
+          assignmentsTable.appendChild(tr);
+        });
+        attachRowEvents();
+      }
+
+      function updateSummary(date = dateInput.value || new Date().toISOString().slice(0,10)) {
+        const filtered = assignments.filter(a => a.date === date);
+        const counts = {};
+        filtered.forEach(a => counts[a.chapel] = (counts[a.chapel] || 0) + 1);
+        const allChapels = ['Capilla Del CONSUELO','Capilla MEMORIAL','Capilla SAN JOSE','Capilla RESURRECCION','Capilla SANTO CRISTO','En DOMICILIO','N/A','S.L.R.C.'];
+        let html = '<table class="min-w-full table-auto mb-4"><thead><tr class="bg-gray-200"><th class="p-2">Capilla</th><th class="p-2">Asignaciones</th></tr></thead><tbody>';
+        allChapels.forEach(ch => {
+          html += `<tr><td class="border p-2">${ch}</td><td class="border p-2">${counts[ch]||0}</td></tr>`;
+        });
+        html += '</tbody></table>';
+        summaryTableDiv.innerHTML = html;
+
+        const labels = allChapels;
+        const data = labels.map(ch => counts[ch]||0);
+        if (summaryChart) summaryChart.destroy();
+        summaryChart = new Chart(summaryChartCtx, {
+          type: 'bar',
+          data: { labels, datasets: [{ label: 'Asignaciones', data }] },
+          options: { responsive: true }
+        });
+      }
+
+      function attachRowEvents() {
+        document.querySelectorAll('.delete-btn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            const idx = e.target.dataset.idx;
+            assignments.splice(idx, 1);
+            saveAppointments(); renderAssignments(); updateSummary(); showMessage('Asignación eliminada','text-yellow-600');
+          });
+        });
+        document.querySelectorAll('.edit-btn').forEach(btn => {
+          btn.addEventListener('click', e => {
+            const idx = e.target.dataset.idx;
+            const a = assignments[idx];
+            chapelSelect.value = a.chapel;
+            dateInput._flatpickr.setDate(a.date);
+            timeSelect.value = a.time;
+            assignments.splice(idx, 1);
+            saveAssignments(); renderAssignments();
+          });
+        });
+      }
+
+      form.addEventListener('submit', e => {
+        e.preventDefault();
+        const chapel = chapelSelect.value;
+        const date = dateInput.value;
+        const time = timeSelect.value;
+        if (!chapel||!date||!time) return showMessage('Completa todos los campos','text-red-600');
+        if (assignments.some(a=>a.chapel===chapel&&a.date===date&&a.time===time)) return showMessage('Esta capilla ya está asignada para este mismo día y horario.','text-red-600');
+        assignments.push({chapel,date,time}); saveAssignments(); renderAssignments(); updateSummary(date);
+        form.reset(); chapelSelect.focus(); showMessage('Asignación guardada correctamente');
+      });
+
+      viewSummaryBtn.addEventListener('click', () => updateSummary());
+
+      renderAssignments(); updateSummary();
+    });
+  </script>
+</body>
+</html>
